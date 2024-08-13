@@ -46,7 +46,7 @@ class _ResumeTailorPageState extends State<ResumeTailorPage> {
       body: json.encode({
         'contents': [{
           'parts': [{
-            'text': 'Tailor this resume to the below job posting $resume job_posting $jobPosting. Do not include anything other than the resume. And send it in the pdf and not markdown'
+            'text': 'Tailor this resume to the below job posting $resume job_posting $jobPosting. Do not include any other text than the resume.'
           }]
         }]
       }),
