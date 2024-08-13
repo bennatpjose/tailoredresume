@@ -1,18 +1,18 @@
 import 'dart:convert';
+import 'dart:html' as html; // Import for web-specific functionality
+import 'dart:typed_data';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
-import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:markdown/markdown.dart' as md;
-import 'dart:io';
-import 'dart:html' as html;
 import 'api_key.dart';
+import 'create_pdf.dart';
+
 
 void main() {
-  runApp(ResumeTailorApp());
+  runApp(ResumeTailorApp() );
 }
 
 class ResumeTailorApp extends StatelessWidget {
@@ -30,9 +30,9 @@ class ResumeTailorPage extends StatefulWidget {
 }
 
 class _ResumeTailorPageState extends State<ResumeTailorPage> {
-   TextEditingController resumeController = TextEditingController();
-   TextEditingController jobPostingController = TextEditingController();
-   TextEditingController tailoredResumeController = TextEditingController();
+  TextEditingController resumeController = TextEditingController();
+  TextEditingController jobPostingController = TextEditingController();
+  TextEditingController tailoredResumeController = TextEditingController();
   int selectedSegment = 0;
 
   Future<void> generateTailoredResume() async {
@@ -43,10 +43,16 @@ class _ResumeTailorPageState extends State<ResumeTailorPage> {
     final response = await http.post(
       Uri.parse('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=$geminiApiKey'),
       headers: {'Content-Type': 'application/json'},
-      body: '{"contents": [{"parts":[{"text":"Tailor this resume to the below job posting $resume job_posting $jobPosting"}]}]}',
+      body: json.encode({
+        'contents': [{
+          'parts': [{
+            'text': 'Tailor this resume to the below job posting $resume job_posting $jobPosting. Do not include anything other than the resume. And send it in the pdf and not markdown'
+          }]
+        }]
+      }),
     );
 
- if (response.statusCode == 200) {
+    if (response.statusCode == 200) {
       var parsedResponse = json.decode(response.body);
       String textContent = parsedResponse['candidates'][0]['content']['parts'][0]['text'];
       setState(() {
@@ -59,33 +65,43 @@ class _ResumeTailorPageState extends State<ResumeTailorPage> {
   }
 
   Future<void> downloadPDF() async {
-    var pdf = pw.Document();
+    
     String markdownText = tailoredResumeController.text;
 
-    // Convert markdown to HTML
+    // Convert Markdown to HTML
     String htmlText = md.markdownToHtml(markdownText);
 
-    // Add the HTML content to the PDF
-    pdf.addPage(
-      pw.Page(
-        build: (pw.Context context) => pw.Center(
-          child: pw.Column(
-            children: [
-              pw.Text(htmlText, style: pw.TextStyle(fontSize: 12)),
-            ],
-          ),
-        ),
-      ),
-    );
+    // Convert HTML to PDF
+    // pdf.addPage(
+    //   pw.Page(
+    //     build: (pw.Context context) => pw.Column(
+    //       crossAxisAlignment: pw.CrossAxisAlignment.start,
+    //       children: parseHtmlToWidgets(htmlText),
+    //     ),
+    //   ),
+    // );
 
     // Generate PDF in memory and provide a download link
-    var bytes = await pdf.save();
-    var blob = html.Blob([bytes], 'application/pdf');
+
+    final pdfBytes = await createDocument(htmlText);
+    var blob = html.Blob([pdfBytes], 'application/pdf');
     var url = html.Url.createObjectUrlFromBlob(blob);
     var anchor = html.AnchorElement(href: url)
       ..setAttribute('download', 'tailored_resume.pdf')
       ..click();
     html.Url.revokeObjectUrl(url);
+  }
+
+
+
+  List<pw.Widget> parseHtmlToWidgets(String htmlText) {
+    // Basic HTML to PDF conversion
+    List<pw.Widget> widgets = [];
+
+    // For simple text content, we'll just create Text widgets
+    widgets.add(pw.Text(htmlText)); // This is a placeholder; replace with actual HTML parsing
+
+    return widgets;
   }
 
   @override

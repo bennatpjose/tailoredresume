@@ -30,11 +30,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  http: ^1.2.2
-  markdown: ^4.0.0
-  path_provider: ^2.1.4
-  pdf: ^3.11.1
-  printing: ^5.13.2
+  markdown: ^5.0.0
+  htmltopdfwidgets: ^1.0.3    
+
   # No need for pdf_image_renderer here
 
 dev_dependencies:
